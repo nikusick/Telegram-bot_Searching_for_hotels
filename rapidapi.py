@@ -1,4 +1,4 @@
-import requests
+from requests import get, codes
 
 
 def take_destination_id(city):
@@ -10,9 +10,7 @@ def take_destination_id(city):
         "X-RapidAPI-Key": "4f2d02f44dmshc4aa5ffc1ea662fp11ea85jsnfad2e7e02480"
     }
 
-    response = requests.request("GET", url,
-                                headers=headers,
-                                params=querystring)
+    response = request_to_api(url, headers, querystring)
 
     for el in response.json()['suggestions'][0]['entities']:
         if el['type'] == 'CITY' and city.lower() == el['name'].lower():
@@ -32,8 +30,8 @@ def take_json_file(user):
     querystring = {"destinationId": user.destination_id,
                    "pageNumber": "1",
                    "pageSize": user.num_of_posts,
-                   "checkIn": "2020-01-08",
-                   "checkOut": "2020-01-15",
+                   "checkIn": user.checkIn,
+                   "checkOut": user.checkOut,
                    "adults1": "1",
                    "priceMin": user.min_price,
                    "priceMax": user.max_price,
@@ -44,12 +42,10 @@ def take_json_file(user):
         "X-RapidAPI-Host": "hotels4.p.rapidapi.com",
         "X-RapidAPI-Key": "4f2d02f44dmshc4aa5ffc1ea662fp11ea85jsnfad2e7e02480"
     }
-    response = requests.request("GET", url,
-                                headers=headers,
-                                params=querystring)
+    response = request_to_api(url, headers, querystring)
     if user.photos == 'no':
         return response.json()['data']['body']['searchResults']['results'], \
-               None
+               ''
     photos = {}
     for el in response.json()['data']['body']['searchResults']['results']:
         photo = ''
@@ -72,6 +68,25 @@ def take_photos(el):
             "4f2d02f44dmshc4aa5ffc1ea662fp11ea85jsnfad2e7e02480"
     }
 
-    photo_response = requests.request("GET", url,
-                                      headers=headers, params=querystring)
+    photo_response = request_to_api(url, headers, querystring)
     return photo_response.json()['hotelImages']
+
+
+def request_to_api(url, headers, querystring):
+    try:
+        response = get(url, headers=headers, params=querystring, timeout=10)
+        if response.status_code == codes.ok:
+            return response
+    except:
+        return None
+
+
+def check(text):
+    try:
+        a = float(text)
+        if a < 0:
+            return False
+        return True
+    except:
+        return False
+

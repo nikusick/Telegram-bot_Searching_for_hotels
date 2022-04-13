@@ -1,3 +1,4 @@
+import datetime
 import time
 
 from telebot import types
@@ -123,7 +124,8 @@ def result_w_photos(number_of_photos):
                              f'\nStreet address: {el["address"]["streetAddress"]} '
                              f'\nDestination to centre: '
                              f'{el["landmarks"][0]["distance"]} '
-                             f'\nPrice: {el["ratePlan"]["price"]["current"]}'
+                             f'\nPrice per night: {el["ratePlan"]["price"]["current"]}'
+                             f'\nAverage price: ${int(el["ratePlan"]["price"]["current"][1:]) * int((datetime.datetime.strptime(user.checkOut, "%Y-%m-%d") - datetime.datetime.strptime(user.checkIn, "%Y-%m-%d")).days)}'
                              f'\nPhotos: {photos[el["name"]]}')
     else:
         bot.send_message(number_of_photos.chat.id, 'Incorrect answer', reply_markup=main_keyboard)
@@ -141,4 +143,5 @@ def result(user_id):
                          f'\nStreet address: {el["address"]["streetAddress"]} '
                          f'\nDestination to centre: '
                          f'{el["landmarks"][0]["distance"]} '
-                         f'\nPrice: {el["ratePlan"]["price"]["current"]}', reply_markup=main_keyboard)
+                         f'\nPrice: {el["ratePlan"]["price"]["current"]}'
+                         f'\nAverage price: ${int(el["ratePlan"]["price"]["current"][1:]) * int((datetime.datetime.strptime(user.checkOut, "%Y-%m-%d") - datetime.datetime.strptime(user.checkIn, "%Y-%m-%d")).days)}', reply_markup=main_keyboard)

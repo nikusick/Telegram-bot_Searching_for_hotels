@@ -1,12 +1,6 @@
-from dotenv import load_dotenv
-import telebot
+from telebot import TeleBot
+from telebot.storage import StateMemoryStorage
+from config_data import config
 
-from pathlib import Path
-import os
-
-load_dotenv()
-env_path = Path('.')/'.env'
-load_dotenv(dotenv_path=env_path)
-
-TOKEN = os.getenv("TOKEN")
-bot = telebot.TeleBot(TOKEN)
+storage = StateMemoryStorage()
+bot = TeleBot(token=config.BOT_TOKEN, state_storage=storage)

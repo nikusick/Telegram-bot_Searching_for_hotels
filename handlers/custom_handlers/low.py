@@ -1,6 +1,12 @@
+import datetime
+
+from telebot import types
+
 from states.custom_states import LowStates
 
 from loader import bot
+
+from site_API.rapidapi import get_cheapest_hotels
 
 
 @bot.message_handler(state='*', commands=['low'])
@@ -29,12 +35,37 @@ def get_count_of_notes(message):
     State 3. Will process when user's state is LowStates.count_of_notes.
     """
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        data['count_of_notes'] = message.text
+        data['count_of_notes'] = int(message.text)
+    bot.set_state(message.from_user.id, LowStates.day_in, message.chat.id)
+    bot.send_message(message.chat.id, 'Дата въезда')
+
+
+@bot.message_handler(state=LowStates.day_in)
+def get_day_in(message):
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        msg = ("Ready, take a look:\n<b>"
-               f"City: {data['city']}\n"
-               f"Number of posts: {data['count_of_notes']}\n</b>")
-    bot.send_message(message.chat.id, msg, parse_mode="html")
+        data['day_in'] = datetime.datetime.strptime(message.text, "%d%m%Y").date()
+    bot.set_state(message.from_user.id, LowStates.day_out, message.chat.id)
+    bot.send_message(message.chat.id, 'Дата выезда')
+
+
+@bot.message_handler(state=LowStates.day_out)
+def get_day_out(message):
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        data['day_out'] = datetime.datetime.strptime(message.text, "%d%m%Y").date()
+    bot.set_state(message.from_user.id, LowStates.day_out, message.chat.id)
+    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
+        hotels = get_cheapest_hotels(city=data['city'], quantity_search=data['count_of_notes'], day_in=data['day_in'],
+                                     day_out=data['day_out'])
+        if hotels is None:
+            bot.send_message(message.chat.id, 'По Вашему запросу ничего не найдено(')
+        else:
+            for hotel in hotels:
+                caption = f'{hotel.get("name")}\n' \
+                          f'Адрес: {hotel.get("address", "Не указан")}\n' \
+                          f'Рейтинг: {hotel.get("rate", "Не указан")}'
+                images = [types.InputMediaPhoto(img_url) for img_url in hotel.get('images')]
+                images[0].caption = caption
+                bot.send_media_group(message.chat.id, images)
     bot.delete_state(message.from_user.id, message.chat.id)
 
 

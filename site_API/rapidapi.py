@@ -1,18 +1,15 @@
 import datetime
-import json
-import re
 from typing import Dict
+from config_data.config import RAPID_API_KEY
 
 import requests
-from telebot.types import Message
-from loader import bot
 
 
 def make_request(method: str, url: str, params: Dict,
                  timeout=10, success=requests.codes.ok):
     url = 'https://hotels4.p.rapidapi.com' + url
     headers = {
-        "X-RapidAPI-Key": "4f2d02f44dmshc4aa5ffc1ea662fp11ea85jsnfad2e7e02480",
+        "X-RapidAPI-Key": RAPID_API_KEY,
         "X-RapidAPI-Host": "hotels4.p.rapidapi.com"
     }
     try:
@@ -48,7 +45,19 @@ def get_detail_info(id):
         "propertyId": f"{id}"
     }
     url_post = "/properties/v2/detail"
-    return make_request(method='post', url=url_post, params=payload, timeout=30)
+    response = make_request(method='post', url=url_post, params=payload, timeout=30).json()
+    try:
+        result = {'name': response.get('data').get('propertyInfo').get('summary').get('name'),
+                  'address': response.get('data').get('propertyInfo')
+                  .get('summary').get('location').get('address').get('addressLine'),
+                  'rate': response.get('data').get('propertyInfo').get('reviewInfo')
+                  .get('summary').get('overallScoreWithDescriptionA11y').get('value'),
+                  'images': [img.get('image').get('url') for img in response.get('data')
+                             .get('propertyInfo').get('propertyGallery').get('images')[:3]]
+                  }
+        return result
+    except Exception:
+        return None
 
 
 def get_properties(city: str, day_in: datetime.date, day_out: datetime.date, price=None):
@@ -106,11 +115,12 @@ def get_cheapest_hotels(city, quantity_search, day_in, day_out):
     try:
         properties = get_properties(city=city, day_in=day_in, day_out=day_out)
         result = []
-        for index in range(len(properties[:quantity_search])):
-            price = (properties[index].get("price").get("options")[0].get("formattedDisplayPrice"))
-            details = get_detail_info(properties[index].get('id'))
+        for property in properties[:quantity_search]:
+            price = (property.get("price").get("options")[0].get("formattedDisplayPrice"))
+            details = get_detail_info(property.get('id'))
             if details:
-                result.append(price)
+                details.update({'price': price})
+                result.append(details)
         return result
     except Exception:
         return None
@@ -129,6 +139,3 @@ def get_luxury_hotels(city, quantity_search, day_in, day_out):
     except Exception:
         return None
 
-
-print(get_cheapest_hotels('Paris', 5, datetime.date(2023, 1, 1), datetime.date(2023, 3, 3)))
-print(get_luxury_hotels('Paris', 5, datetime.date(2023, 1, 1), datetime.date(2023, 3, 3)))

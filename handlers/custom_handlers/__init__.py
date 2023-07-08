@@ -2,6 +2,7 @@ from . import cancel
 from . import low
 from . import custom
 from . import high
+from . import calendar
 
 from telebot import custom_filters
 from loader import bot

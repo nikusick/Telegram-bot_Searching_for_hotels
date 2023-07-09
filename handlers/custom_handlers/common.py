@@ -10,6 +10,7 @@ def ask_city(message):
     bot.set_state(message.from_user.id, CustomStates.city, message.chat.id)
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         data['command'] = message.text
+        data['user_id'] = message.from_user.id
     bot.send_message(message.chat.id, 'Какой город Вас интересует?')
 
 

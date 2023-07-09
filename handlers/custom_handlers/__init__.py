@@ -1,6 +1,7 @@
 from . import common
 from . import cancel
 from . import custom
+from . import history
 
 from telebot import custom_filters
 from loader import bot

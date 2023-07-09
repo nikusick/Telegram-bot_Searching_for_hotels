@@ -1,7 +1,7 @@
-import datetime
 from typing import Dict
 from config_data.config import RAPID_API_KEY
 
+import datetime
 import requests
 
 
@@ -53,7 +53,8 @@ def get_detail_info(id):
                   'rate': response.get('data').get('propertyInfo').get('reviewInfo')
                   .get('summary').get('overallScoreWithDescriptionA11y').get('value'),
                   'images': [img.get('image').get('url') for img in response.get('data')
-                             .get('propertyInfo').get('propertyGallery').get('images')[:3]]
+                                                                    .get('propertyInfo').get('propertyGallery').get(
+                      'images')[:3]]
                   }
         return result
     except Exception:
@@ -130,12 +131,29 @@ def get_luxury_hotels(city, quantity_search, day_in, day_out):
     try:
         properties = get_properties(city=city, day_in=day_in, day_out=day_out)
         result = []
-        for index in range(len(properties) - 1, len(properties) - 1 - quantity_search, -1):
-            price = (properties[index].get("price").get("options")[0].get("formattedDisplayPrice"))
-            details = get_detail_info(properties[index].get('id'))
+        for property in properties[:-quantity_search - 1:-1]:
+            price = (property.get("price").get("options")[0].get("formattedDisplayPrice"))
+            details = get_detail_info(property.get('id'))
             if details:
-                result.append(price)
+                details.update({'price': price})
+                result.append(details)
         return result
     except Exception:
         return None
 
+
+def get_custom_hotels(city, quantity_search, day_in, day_out, min_price, max_price):
+    try:
+        properties = get_properties(city=city, day_in=day_in, day_out=day_out, price={"price":
+                                                                                          {"max": max_price,
+                                                                                           "min": min_price}})
+        result = []
+        for property in properties[:quantity_search]:
+            price = (property.get("price").get("options")[0].get("formattedDisplayPrice"))
+            details = get_detail_info(property.get('id'))
+            if details:
+                details.update({'price': price})
+                result.append(details)
+        return result
+    except Exception:
+        return None

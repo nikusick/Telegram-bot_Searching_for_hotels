@@ -8,6 +8,9 @@ from site_API.rapidapi import get_cheapest_hotels, \
 
 
 def get_result(data: Dict) -> List | None:
+    """
+    Получение результата запроса по данным, введенным пользователем
+    """
     quantity_search = min(10, data['count_of_notes'])
     if data['command'] == '/low':
         hotels = get_cheapest_hotels(

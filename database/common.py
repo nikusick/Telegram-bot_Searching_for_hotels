@@ -31,6 +31,7 @@ def generate_db() -> NoReturn:
 def get_user_id(telegram_id: str, conn: Connection) -> str:
     """
     Получение id пользователя по его telegram_id. Если пользователя нет в базе данных, его добавление.
+
     @param telegram_id: Id пользователя в Telegram
     @param conn: SQLite объект подключения к базе данных.
     @return: id пользователя
@@ -51,7 +52,7 @@ def get_user_id(telegram_id: str, conn: Connection) -> str:
 def add_query(data: Dict[str, str]) -> NoReturn:
     """
     Добавление запроса в базу данных
-    ================================
+
     @param data: Информация о запросе:
     - Введенная команда
     - Город
@@ -72,6 +73,7 @@ def add_query(data: Dict[str, str]) -> NoReturn:
 def get_history(user_id: str, limit: int) -> List[str]:
     """
     Получение истории запросов
+
     @param user_id: Telegram-id пользователя
     @param limit: Число запросов, выведенных пользователю
     @return: Список запросов в количестве limit пользователя с id user_id

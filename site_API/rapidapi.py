@@ -1,4 +1,7 @@
-from typing import Dict
+from typing import Dict, Tuple, List
+
+from requests import Response
+
 from config_data.config import RAPID_API_KEY
 
 import datetime
@@ -6,7 +9,7 @@ import requests
 
 
 def make_request(method: str, url: str, params: Dict,
-                 timeout=10, success=requests.codes.ok):
+                 timeout: int = 10, success: int = requests.codes.ok) -> Response | None:
     url = 'https://hotels4.p.rapidapi.com' + url
     headers = {
         "X-RapidAPI-Key": RAPID_API_KEY,
@@ -24,7 +27,7 @@ def make_request(method: str, url: str, params: Dict,
     return None
 
 
-def get_city_destination(city: str):
+def get_city_destination(city: str) -> Tuple[str, str, str] | None:
     url = '/locations/v3/search'
     params = {"q": city}
     response = make_request('get', url, params)
@@ -36,7 +39,7 @@ def get_city_destination(city: str):
         return None
 
 
-def get_detail_info(id):
+def get_detail_info(id: int) -> Dict | None:
     payload = {
         "currency": "USD",
         "eapid": 1,
@@ -61,7 +64,7 @@ def get_detail_info(id):
         return None
 
 
-def get_properties(city: str, day_in: datetime.date, day_out: datetime.date, price=None):
+def get_properties(city: str, day_in: datetime.date, day_out: datetime.date, price: Dict = None) -> List | None:
     gaiaId, lat, long = get_city_destination(city=city)
     payload = {
         "currency": "USD",
@@ -112,7 +115,8 @@ def get_properties(city: str, day_in: datetime.date, day_out: datetime.date, pri
     return None
 
 
-def get_cheapest_hotels(city, quantity_search, day_in, day_out):
+def get_cheapest_hotels(city: str, quantity_search: int,
+                        day_in: datetime.date, day_out: datetime.date) -> List[Dict] | None:
     try:
         properties = get_properties(city=city, day_in=day_in, day_out=day_out)
         result = []
@@ -127,7 +131,8 @@ def get_cheapest_hotels(city, quantity_search, day_in, day_out):
         return None
 
 
-def get_luxury_hotels(city, quantity_search, day_in, day_out):
+def get_luxury_hotels(city: str, quantity_search: int,
+                      day_in: datetime.date, day_out: datetime.date) -> List[Dict] | None:
     try:
         properties = get_properties(city=city, day_in=day_in, day_out=day_out)
         result = []
@@ -142,7 +147,9 @@ def get_luxury_hotels(city, quantity_search, day_in, day_out):
         return None
 
 
-def get_custom_hotels(city, quantity_search, day_in, day_out, min_price, max_price):
+def get_custom_hotels(city: str, quantity_search: int,
+                      day_in: datetime.date, day_out: datetime.date,
+                      min_price: float, max_price: float) -> List[Dict] | None:
     try:
         properties = get_properties(city=city, day_in=day_in, day_out=day_out, price={"price":
                                                                                           {"max": max_price,

@@ -1,4 +1,6 @@
 import sqlite3
+from sqlite3 import Connection
+from typing import Dict, List, NoReturn
 
 CREATE_TABLES = """
 drop table if exists users;
@@ -16,14 +18,15 @@ create table queries (
 """
 
 
-def generate_db():
+def generate_db() -> NoReturn:
+
     with sqlite3.connect("telebot.db") as conn:
         cursor = conn.cursor()
         cursor.executescript(CREATE_TABLES)
         conn.commit()
 
 
-def add_user(telegram_id, conn):
+def add_user(telegram_id: str, conn: Connection) -> str:
     cursor = conn.cursor()
     cursor.execute("select user_id from users where telegram_user_id = ?", (telegram_id,))
     data = cursor.fetchall()
@@ -35,7 +38,7 @@ def add_user(telegram_id, conn):
         return data[0][0]
 
 
-def add_query(data):
+def add_query(data: Dict[str, str]) -> NoReturn:
     with sqlite3.connect("telebot.db") as conn:
         user_id = add_user(data.get('user_id'), conn)
         cursor = conn.cursor()
@@ -46,7 +49,7 @@ def add_query(data):
         conn.commit()
 
 
-def get_history(user_id, limit):
+def get_history(user_id: str, limit: int) -> List[str]:
     with sqlite3.connect("telebot.db") as conn:
         cursor = conn.cursor()
         cursor.execute("select query_text from queries "

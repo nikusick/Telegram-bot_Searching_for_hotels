@@ -1,10 +1,12 @@
+from typing import Dict, List
+
 from telebot import types
 
 from database.common import add_query
 from site_API.rapidapi import get_cheapest_hotels, get_luxury_hotels, get_custom_hotels
 
 
-def get_result(data):
+def get_result(data: Dict) -> List | None:
     quantity_search = min(10, data['count_of_notes'])
     if data['command'] == '/low':
         hotels = get_cheapest_hotels(city=data['city'], quantity_search=quantity_search,

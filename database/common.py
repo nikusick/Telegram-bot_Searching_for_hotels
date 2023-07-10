@@ -28,10 +28,12 @@ def generate_db() -> NoReturn:
 
 def add_user(telegram_id: str, conn: Connection) -> str:
     cursor = conn.cursor()
-    cursor.execute("select user_id from users where telegram_user_id = ?", (telegram_id,))
+    cursor.execute("select user_id from users "
+                   "where telegram_user_id = ?", (telegram_id,))
     data = cursor.fetchall()
     if len(data) == 0:
-        cursor.execute("insert into users(telegram_user_id) values(?)", (telegram_id,))
+        cursor.execute("insert into users(telegram_user_id) "
+                       "values(?)", (telegram_id,))
         conn.commit()
         return add_user(telegram_id, conn)
     else:
@@ -43,7 +45,8 @@ def add_query(data: Dict[str, str]) -> NoReturn:
         user_id = add_user(data.get('user_id'), conn)
         cursor = conn.cursor()
         cursor.execute("insert into queries(query_text, user_id) values(?, ?)",
-                       (f'Команда: {data.get("command")}\nГород: {data.get("city")}\n'
+                       (f'Команда: {data.get("command")}\n'
+                        f'Город: {data.get("city")}\n'
                         f'Дата въезда: {data.get("day_in")}\n'
                         f'Дата выезда: {data.get("day_out")}\n', user_id))
         conn.commit()

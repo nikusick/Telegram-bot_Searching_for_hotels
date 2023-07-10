@@ -9,7 +9,8 @@ import requests
 
 
 def make_request(method: str, url: str, params: Dict,
-                 timeout: int = 10, success: int = requests.codes.ok) -> Response | None:
+                 timeout: int = 10,
+                 success: int = requests.codes.ok) -> Response | None:
     url = 'https://hotels4.p.rapidapi.com' + url
     headers = {
         "X-RapidAPI-Key": RAPID_API_KEY,
@@ -17,9 +18,11 @@ def make_request(method: str, url: str, params: Dict,
     }
     try:
         if method == 'get':
-            request = requests.request(method=method, url=url, params=params, headers=headers, timeout=timeout)
+            request = requests.request(method=method, url=url, params=params,
+                                       headers=headers, timeout=timeout)
         else:
-            request = requests.request(method=method, url=url, json=params, headers=headers, timeout=timeout)
+            request = requests.request(method=method, url=url, json=params,
+                                       headers=headers, timeout=timeout)
         if request.status_code == success:
             return request
     except Exception:
@@ -48,23 +51,31 @@ def get_detail_info(id: int) -> Dict | None:
         "propertyId": f"{id}"
     }
     url_post = "/properties/v2/detail"
-    response = make_request(method='post', url=url_post, params=payload, timeout=30).json()
+    response = make_request(method='post', url=url_post,
+                            params=payload, timeout=30).json()
+    response = response.get('data').get('propertyInfo')
     try:
-        result = {'name': response.get('data').get('propertyInfo').get('summary').get('name'),
-                  'address': response.get('data').get('propertyInfo')
-                  .get('summary').get('location').get('address').get('addressLine'),
-                  'rate': response.get('data').get('propertyInfo').get('reviewInfo')
-                  .get('summary').get('overallScoreWithDescriptionA11y').get('value'),
-                  'images': [img.get('image').get('url') for img in response.get('data')
-                                                                    .get('propertyInfo').get('propertyGallery').get(
-                      'images')[:3]]
+        result = {'name':
+                  response.get('summary').get('name'),
+                  'address':
+                      response.get('summary').get('location').
+                      get('address').get('addressLine'),
+                  'rate':
+                      response.get('reviewInfo').get('summary')
+                      .get('overallScoreWithDescriptionA11y').get('value'),
+                  'images':
+                      [img.get('image').get('url')
+                       for img in response.get('propertyGallery')
+                          .get('images')[:3]]
                   }
         return result
     except Exception:
         return None
 
 
-def get_properties(city: str, day_in: datetime.date, day_out: datetime.date, price: Dict = None) -> List | None:
+def get_properties(city: str, day_in: datetime.date,
+                   day_out: datetime.date, price: Dict = None) \
+        -> List | None:
     gaiaId, lat, long = get_city_destination(city=city)
     payload = {
         "currency": "USD",
@@ -104,11 +115,13 @@ def get_properties(city: str, day_in: datetime.date, day_out: datetime.date, pri
         payload['filters'] = price
     url_post = "/properties/v2/list"
 
-    response = make_request(method='post', url=url_post, params=payload, timeout=30)
+    response = make_request(method='post', url=url_post,
+                            params=payload, timeout=30)
     if response is not None:
         try:
             response = response.json()
-            properties = response.get('data').get('propertySearch').get('properties')
+            properties = response.get('data') \
+                .get('propertySearch').get('properties')
             return properties
         except Exception:
             return None
@@ -116,12 +129,14 @@ def get_properties(city: str, day_in: datetime.date, day_out: datetime.date, pri
 
 
 def get_cheapest_hotels(city: str, quantity_search: int,
-                        day_in: datetime.date, day_out: datetime.date) -> List[Dict] | None:
+                        day_in: datetime.date, day_out: datetime.date) \
+        -> List[Dict] | None:
     try:
         properties = get_properties(city=city, day_in=day_in, day_out=day_out)
         result = []
         for property in properties[:quantity_search]:
-            price = (property.get("price").get("options")[0].get("formattedDisplayPrice"))
+            price = property.get("price").get("options")[0] \
+                .get("formattedDisplayPrice")
             details = get_detail_info(property.get('id'))
             if details:
                 details.update({'price': price})
@@ -132,12 +147,14 @@ def get_cheapest_hotels(city: str, quantity_search: int,
 
 
 def get_luxury_hotels(city: str, quantity_search: int,
-                      day_in: datetime.date, day_out: datetime.date) -> List[Dict] | None:
+                      day_in: datetime.date, day_out: datetime.date) \
+        -> List[Dict] | None:
     try:
         properties = get_properties(city=city, day_in=day_in, day_out=day_out)
         result = []
         for property in properties[:-quantity_search - 1:-1]:
-            price = (property.get("price").get("options")[0].get("formattedDisplayPrice"))
+            price = (property.get("price").get("options")[0]
+                     .get("formattedDisplayPrice"))
             details = get_detail_info(property.get('id'))
             if details:
                 details.update({'price': price})
@@ -149,14 +166,18 @@ def get_luxury_hotels(city: str, quantity_search: int,
 
 def get_custom_hotels(city: str, quantity_search: int,
                       day_in: datetime.date, day_out: datetime.date,
-                      min_price: float, max_price: float) -> List[Dict] | None:
+                      min_price: float, max_price: float) \
+        -> List[Dict] | None:
     try:
-        properties = get_properties(city=city, day_in=day_in, day_out=day_out, price={"price":
-                                                                                          {"max": max_price,
-                                                                                           "min": min_price}})
+        properties = get_properties(city=city, day_in=day_in, day_out=day_out,
+                                    price={"price":
+                                           {"max": max_price,
+                                            "min": min_price
+                                            }})
         result = []
         for property in properties[:quantity_search]:
-            price = (property.get("price").get("options")[0].get("formattedDisplayPrice"))
+            price = (property.get("price").get("options")[0].
+                     get("formattedDisplayPrice"))
             details = get_detail_info(property.get('id'))
             if details:
                 details.update({'price': price})

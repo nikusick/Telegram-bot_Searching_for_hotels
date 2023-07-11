@@ -12,11 +12,25 @@ create table users (
 drop table if exists queries;
 create table queries (
     query_id integer primary key autoincrement,
-    query_text text not null,
+    command text not null,
+    city text not null,
+    day_in text not null,
+    day_out text not null,
+    min_price text default null, 
+    max_price text default null,
     user_id integer references users(user_id)
 );
-"""
 
+drop table if exists results;
+create table results (
+    result_id integer primary key autoincrement,
+    hotel_name text not null,
+    rate text,
+    address text not null,
+    price text not null,
+    query_id integer references queries(query_id)
+)
+"""
 
 def generate_db() -> NoReturn:
     """
@@ -24,7 +38,7 @@ def generate_db() -> NoReturn:
     """
     with sqlite3.connect("telebot.db") as conn:
         cursor = conn.cursor()
-        cursor.executescript(CREATE_TABLES)
+        #cursor.executescript(CREATE_TABLES)
         conn.commit()
 
 
@@ -42,14 +56,36 @@ def get_user_id(telegram_id: str, conn: Connection) -> str:
     data = cursor.fetchall()
     if len(data) == 0:
         cursor.execute("insert into users(telegram_user_id) "
-                       "values(?)", (telegram_id,))
+                       "values(?);", (telegram_id,))
         conn.commit()
-        return get_user_id(telegram_id, conn)
+        return str(cursor.lastrowid)
     else:
         return data[0][0]
 
 
-def add_query(data: Dict[str, str]) -> NoReturn:
+def add_results(results: List[Dict], query_id: int, conn: Connection) -> NoReturn:
+    """
+    Добавление результатов запроса в базу данных
+    """
+    cursor = conn.cursor()
+    results = [(result.get('name'), result.get('rate'),
+                result.get('address'), result.get('price'), query_id)
+               for result in results]
+    cursor.executemany('''insert into results(hotel_name, rate, 
+                            address, price, query_id) 
+                          values(?, ?, ?, ?, ?)''', results)
+
+
+def add_to_db(data: Dict[str, str], result: List[Dict]) -> NoReturn:
+    """
+    Добавление полной информации о запросе в базу данных
+    """
+    with sqlite3.connect("telebot.db") as conn:
+        query_id = add_query(data=data, conn=conn)
+        add_results(results=result, query_id=query_id, conn=conn)
+
+
+def add_query(data: Dict[str, str], conn: Connection) -> int:
     """
     Добавление запроса в базу данных
 
@@ -59,18 +95,19 @@ def add_query(data: Dict[str, str]) -> NoReturn:
     - Дата въезда в отель
     - Дата выезда из отеля
     """
-    with sqlite3.connect("telebot.db") as conn:
-        user_id = get_user_id(data.get('user_id'), conn)
-        cursor = conn.cursor()
-        cursor.execute("insert into queries(query_text, user_id) values(?, ?)",
-                       (f'Команда: {data.get("command")}\n'
-                        f'Город: {data.get("city")}\n'
-                        f'Дата въезда: {data.get("day_in")}\n'
-                        f'Дата выезда: {data.get("day_out")}\n', user_id))
-        conn.commit()
+    user_id = get_user_id(data.get('user_id'), conn)
+    cursor = conn.cursor()
+    cursor.execute("insert into queries(command, city, "
+                   "day_in, day_out, min_price, max_price, user_id)"
+                   " values(?, ?, ?, ?, ?, ?, ?);",
+                   (data.get('command'), data.get('city'),
+                    data.get('day_in'), data.get('day_out'),
+                    data.get('min_price'), data.get('max_price'), user_id))
+    conn.commit()
+    return cursor.lastrowid
 
 
-def get_history(user_id: str, limit: int) -> List[str]:
+def get_history(user_id: str, limit: int) -> List[Dict]:
     """
     Получение истории запросов
 
@@ -79,10 +116,19 @@ def get_history(user_id: str, limit: int) -> List[str]:
     @return: Список запросов в количестве limit пользователя с id user_id
     """
     with sqlite3.connect("telebot.db") as conn:
+        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        cursor.execute("select query_text from queries "
-                       "left join users on users.user_id = queries.user_id "
-                       "where telegram_user_id = ? "
-                       "limit ?;", (user_id, limit))
-        result = [query[0] for query in cursor.fetchall()]
-        return result
+        cursor.execute('''select command, city, day_in, day_out, 
+                          min_price, max_price, query_id from queries
+                          left join users on users.user_id = queries.user_id
+                          where telegram_user_id = ?
+                          limit ?;''', (user_id, limit))
+        queries = [dict(q) for q in cursor.fetchall()]
+        for query in queries:
+            cursor.execute('''select hotel_name, rate, 
+                              address, price from results
+                              left join queries q on q.query_id = results.query_id
+                              where q.query_id = ?;''', (query.get('query_id'),))
+            results = [dict(i) for i in cursor.fetchall()]
+            query['results'] = results
+        return queries

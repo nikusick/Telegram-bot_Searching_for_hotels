@@ -2,7 +2,7 @@ from typing import Dict, List
 
 from telebot import types
 
-from database.common import add_query
+from database.common import add_to_db
 from site_API.rapidapi import get_cheapest_hotels, \
     get_luxury_hotels, get_custom_hotels
 
@@ -39,7 +39,7 @@ def get_result(data: Dict) -> List | None:
         return None
     if hotels is None:
         return None
-    add_query(data)
+    add_to_db(data, hotels)
     result = []
     for hotel in hotels:
         caption = f'{hotel.get("name")}\n' \

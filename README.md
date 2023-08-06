@@ -1,4 +1,11 @@
 # Telegram-bot_Searching_for_hotels
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![SQLite](https://img.shields.io/badge/sqlite-%2307405e.svg?style=for-the-badge&logo=sqlite&logoColor=white)
+![PyCharm](https://img.shields.io/badge/pycharm-143?style=for-the-badge&logo=pycharm&logoColor=black&color=black&labelColor=green)
+
+
+![Bot API](https://img.shields.io/badge/pyTelegramBotAPI-4.9.0-blue)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 Бот найдёт лучшие отели согласно вашему запросу<br>
 Бот: @SearchingForHotelsBot 
